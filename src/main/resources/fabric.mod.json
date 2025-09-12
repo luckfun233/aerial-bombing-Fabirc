@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "aerial-bombing",
+	"version": "${version}",
+	"name": "Aerial Bombing",
+	"description": "允许玩家在鞘翅飞行时投掷TNT炸弹，提供真实的物理投弹体验",
+	"authors": [
+		"YourName"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/aerial-bombing/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.aerial.bombing.AerialBombing"
+		],
+		"client": [
+			"com.aerial.bombing.client.AerialBombingClient"
+		],
+		"modmenu": [
+			"com.aerial.bombing.client.ModMenuIntegration"
+		],
+		"fabric-datagen": [
+			"com.aerial.bombing.AerialBombingDataGenerator"
+		]
+	},
+	"mixins": [
+		"aerial-bombing.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.14.2",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*",
+		"cloth-config": "*"
+	}
+}

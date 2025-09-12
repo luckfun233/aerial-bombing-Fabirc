@@ -1,0 +1,34 @@
+{
+  "key.category.aerial_bombing": "空中轰炸",
+  "key.aerial_bombing.drop_bomb": "投掷炸弹",
+
+  "text.autoconfig.aerial-bombing.title": "空中轰炸配置",
+  "text.autoconfig.aerial-bombing.category.default": "基本设置",
+  "text.autoconfig.aerial-bombing.option.enableAerialBombing": "启用空中轰炸",
+  "text.autoconfig.aerial-bombing.option.enableAerialBombing.@Tooltip": "是否启用空中轰炸功能",
+  "text.autoconfig.aerial-bombing.option.requireFlintAndSteel": "需要打火石",
+  "text.autoconfig.aerial-bombing.option.requireFlintAndSteel.@Tooltip": "投弹时是否需要在副手持有打火石",
+  "text.autoconfig.aerial-bombing.option.bombCooldownMs": "投弹冷却时间(毫秒)",
+  "text.autoconfig.aerial-bombing.option.bombCooldownMs.@Tooltip": "两次投弹之间的最小间隔时间",
+  "text.autoconfig.aerial-bombing.option.bombStrength": "炸弹威力",
+  "text.autoconfig.aerial-bombing.option.bombStrength.@Tooltip": "炸弹的爆炸威力等级",
+
+  "text.autoconfig.aerial-bombing.category.advancedPhysics": "高级物理参数",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics": "高级物理设置",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.horizontalInertia": "水平惯性系数",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.horizontalInertia.@Tooltip": "炸弹继承玩家水平速度的比例(0-100%)",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.verticalInertia": "垂直惯性系数",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.verticalInertia.@Tooltip": "炸弹继承玩家垂直速度的比例(0-100%)",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.throwForce": "投掷力量",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.throwForce.@Tooltip": "手动投掷附加的力量(0-100%)",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAngularVelocity": "启用角速度继承",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAngularVelocity.@Tooltip": "是否启用玩家旋转对炸弹轨迹的影响",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAdvancedDrag": "启用高级阻力模型",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAdvancedDrag.@Tooltip": "是否启用基于流体力学的阻力计算",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer": "角动量传递系数",
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "炸弹继承玩家角动量的比例(0-100%)",
+
+  "text.aerial_bombing.requires_elytra": "需要装备鞘翅才能投弹!",
+  "text.aerial_bombing.requires_tnt": "需要在主手持有TNT才能投弹!",
+  "text.aerial_bombing.requires_flint": "需要在副手持有打火石才能引爆炸弹!"
+}
