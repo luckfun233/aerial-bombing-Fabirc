@@ -11,7 +11,7 @@
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
-	"license": "LGPLV3",
+	"license": "LGPLv3",
 	"icon": "assets/aerial-bombing/icon.png",
 	"environment": "*",
 	"entrypoints": {
