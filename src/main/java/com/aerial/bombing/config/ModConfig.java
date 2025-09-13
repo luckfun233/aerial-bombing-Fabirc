@@ -23,6 +23,10 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.BoundedDiscrete(min = 1, max = 10)
     public int bombStrength = 4;
 
+    // 新增选项：用于切换物理模拟引擎
+    @ConfigEntry.Gui.Tooltip(count = 2)
+    public boolean useAdvancedPhysics = true;
+
     // 高级物理参数分组
     @ConfigEntry.Gui.CollapsibleObject(startExpanded = true)
     public AdvancedPhysicsConfig advancedPhysics = new AdvancedPhysicsConfig();

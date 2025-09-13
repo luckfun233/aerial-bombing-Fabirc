@@ -1,8 +1,9 @@
 package com.aerial.bombing.util;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Identifier;
 import net.minecraft.registry.Registries;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class TntValidator {
 
@@ -18,13 +19,15 @@ public class TntValidator {
 
         Identifier id = Registries.ITEM.getId(stack.getItem());
         String path = id.getPath().toLowerCase();
+        Text name = stack.getName();
+        String nameString = name.getString().toLowerCase();
 
-        // 排除矿车类型的物品
-        if (path.contains("minecart")) {
+        // 检查ID和名称是否包含"minecart"或中文"矿车"，如果包含则排除
+        if (path.contains("minecart") || nameString.contains("minecart") || nameString.contains("矿车")) {
             return false;
         }
 
-        // 检查是否包含tnt关键字
+        // 检查ID是否包含"tnt"关键字
         return path.contains("tnt");
     }
 

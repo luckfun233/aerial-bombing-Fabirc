@@ -23,7 +23,7 @@ public class AerialBombingKeybinds {
         dropBombKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 KEY_DROP_BOMB,
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_B,
+                GLFW.GLFW_KEY_G,
                 KEY_CATEGORY_AERIAL_BOMBING
         ));
 

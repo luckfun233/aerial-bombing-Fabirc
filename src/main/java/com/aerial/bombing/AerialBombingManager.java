@@ -1,29 +1,39 @@
 package com.aerial.bombing;
 
 import com.aerial.bombing.config.ModConfig;
-import com.aerial.bombing.entity.ModTntEntity;
+import com.aerial.bombing.entity.TntEntityOwner;
 import com.aerial.bombing.physics.AdvancedMomentumCalculator;
 import com.aerial.bombing.physics.BombMotionState;
+import com.aerial.bombing.physics.MomentumCalculator;
 import com.aerial.bombing.util.TntValidator;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public class AerialBombingManager {
     private static AerialBombingManager INSTANCE;
+    public static final Logger LOGGER = LoggerFactory.getLogger("AerialBombingManager");
 
     private final Map<UUID, Long> lastBombTime = new HashMap<>();
 
@@ -102,7 +112,7 @@ public class AerialBombingManager {
     }
 
     /**
-     * 执行高级物理投弹
+     * 执行高级物理投弹 - 已重构以兼容其他模组
      * @param player 玩家
      * @param world 世界
      * @param tntStack TNT物品
@@ -110,45 +120,76 @@ public class AerialBombingManager {
      * @return 是否成功
      */
     private boolean executeAdvancedBombing(PlayerEntity player, World world, ItemStack tntStack, ModConfig config) {
+        if (world.isClient) {
+            return true; // 客户端只负责发送请求，不执行逻辑
+        }
+
+        // 从物品ID推断实体ID
+        Identifier itemIdentifier = Registries.ITEM.getId(tntStack.getItem());
+        // 大多数模组遵循 item id 和 entity id 相同的惯例
+        Identifier entityIdentifier = new Identifier(itemIdentifier.getNamespace(), itemIdentifier.getPath());
+
+        Optional<EntityType<?>> entityTypeOptional = EntityType.get(entityIdentifier.toString());
+
+        if (entityTypeOptional.isEmpty()) {
+            LOGGER.warn("未能为物品 {} 找到对应的实体类型 {}，将使用原版TNT作为备用。", itemIdentifier, entityIdentifier);
+            // 如果找不到，就退回到生成原版TNT
+            entityTypeOptional = Optional.of(EntityType.TNT);
+        }
+
+        EntityType<?> entityType = entityTypeOptional.get();
+        Entity spawnedEntity = entityType.create(world);
+
+        if (spawnedEntity == null) {
+            LOGGER.error("无法创建实体 {}！", entityIdentifier);
+            return false;
+        }
+
         // 消耗一个TNT
-        tntStack.decrement(1);
+        if (!player.isCreative()) {
+            tntStack.decrement(1);
+        }
 
         // 记录投弹时间
         lastBombTime.put(player.getUuid(), System.currentTimeMillis());
 
-        // 使用高级物理计算投弹动量
-        BombMotionState motionState = AdvancedMomentumCalculator.calculateAdvancedMomentum(
-                player, config.advancedPhysics);
-
-        // 创建真实的TNT实体
-        if (!world.isClient) {
-            // 使用正确的构造函数创建TNT实体
-            ModTntEntity tntEntity = new ModTntEntity(
-                    world,
-                    motionState.position.x,
-                    motionState.position.y,
-                    motionState.position.z,
-                    player
-            );
-
-            // 设置炸弹的初始速度
-            tntEntity.setVelocity(
-                    motionState.velocity.x,
-                    motionState.velocity.y,
-                    motionState.velocity.z
-            );
-
-            // 设置TNT的Fuse时长（与原版一致）
-            tntEntity.setFuse(80);
-
-            world.spawnEntity(tntEntity);
+        // 根据配置选择物理模拟器
+        BombMotionState motionState;
+        if (config.useAdvancedPhysics) {
+            // 使用高级物理计算
+            motionState = AdvancedMomentumCalculator.calculateAdvancedMomentum(player, config.advancedPhysics);
+        } else {
+            // 使用你的原始物理计算
+            Vec3d position = MomentumCalculator.calculateDropPosition(player);
+            Vec3d velocity = MomentumCalculator.calculateRealisticMomentum(player);
+            motionState = new BombMotionState(position, velocity, Vec3d.ZERO); // 原始模拟不含角速度
         }
+
+        // 设置实体位置
+        spawnedEntity.setPosition(motionState.position);
+
+        // 设置实体初始速度 (关键步骤：应用物理模拟结果)
+        spawnedEntity.setVelocity(motionState.velocity);
+
+        // 如果是TntEntity或其子类，进行点燃并设置所有者
+        if (spawnedEntity instanceof TntEntity tnt) {
+            tnt.setFuse(80); // 原版TNT的点燃时间
+            ((TntEntityOwner) tnt).setOwner(player); // 使用Mixin接口设置所有者
+        } else if (spawnedEntity instanceof TntEntityOwner ownerTnt) {
+            // 兼容实现了我们接口但不是TntEntity的实体（不太可能但保险）
+            ownerTnt.setOwner(player);
+        }
+
+        // 在世界中生成实体
+        world.spawnEntity(spawnedEntity);
 
         // 播放声音
         world.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.PLAYERS, 1.0F, 1.0F);
+        LOGGER.info("玩家 {} 投下了一个 {} 实体。", player.getName().getString(), entityIdentifier);
 
         return true;
     }
+
 
     /**
      * 检查玩家是否可以投弹（用于按键绑定）
