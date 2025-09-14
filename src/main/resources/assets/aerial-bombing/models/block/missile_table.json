@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "minecraft:block/crafting_table_top",
+    "side": "aerial-bombing:block/compacter"
+  }
+}

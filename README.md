@@ -69,3 +69,6 @@ I am not very skilled at programming and this is just a hobby project, I am only
 还原物理模拟
 ## 整合包
 随用，可以随意使用
+
+## 致谢
+[compacter](https://github.com/bdew-minecraft/compacter)项目提供的贴图文件

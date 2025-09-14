@@ -1,10 +1,9 @@
 {
   "key.category.aerial_bombing": "Aerial Bombing",
   "key.aerial_bombing.drop_bomb": "Drop Bomb",
-  "text.aerial_bombing.requires_elytra": "Elytra flight is required for aerial bombing!",
+  "text.aerial-bombing.requires_elytra": "Elytra flight is required for aerial bombing!",
   "text.aerial_bombing.requires_tnt": "You must hold TNT in your main hand!",
-  "text.aerial_bombing.requires_flint": "Requires Flint and Steel in the off-hand to ignite!",
-
+  "text.aerial-bombing.requires_flint": "Requires Flint and Steel in the off-hand to ignite!",
   "text.autoconfig.aerial-bombing.title": "Aerial Bombing Configuration",
   "text.autoconfig.aerial-bombing.option.enableAerialBombing": "Enable Aerial Bombing",
   "text.autoconfig.aerial-bombing.option.enableAerialBombing.@Tooltip": "If enabled, players can drop TNT while flying with Elytra.",
@@ -29,5 +28,11 @@
   "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAdvancedDrag": "Enable Advanced Drag",
   "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAdvancedDrag.@Tooltip": "Enables a more realistic air resistance model.",
   "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer": "Angular Momentum Transfer (%)",
-  "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "Percentage of player's angular momentum transferred to the bomb."
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "Percentage of player's angular momentum transferred to the bomb.",
+
+  "block.aerial-bombing.missile_table": "Missile Table",
+  "item.aerial-bombing.missile_tnt": "Missile TNT",
+
+  "gui.aerial-bombing.instant_explosion_on": "Instant: §aON",
+  "gui.aerial-bombing.instant_explosion_off": "Instant: §cOFF"
 }

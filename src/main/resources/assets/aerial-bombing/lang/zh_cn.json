@@ -29,5 +29,11 @@
   "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAdvancedDrag": "启用高级阻力",
   "text.autoconfig.aerial-bombing.option.advancedPhysics.enableAdvancedDrag.@Tooltip": "启用一个更真实的空气阻力模型。",
   "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer": "角动量传递 (%)",
-  "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "玩家的角动量传递给炸弹的百分比。"
+  "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "玩家的角动量传递给炸弹的百分比。",
+
+  "block.aerial-bombing.missile_table": "导弹合成台",
+  "item.aerial-bombing.missile_tnt": "导弹 TNT",
+
+  "gui.aerial-bombing.instant_explosion_on": "瞬爆: §a开启",
+  "gui.aerial-bombing.instant_explosion_off": "瞬爆: §c关闭"
 }
