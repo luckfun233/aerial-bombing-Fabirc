@@ -5,7 +5,6 @@
 	"mixins": [
 		"ExampleMixin",
 		"ItemStackMixin",
-		"EntityMixin",
 		"TntEntityMixin"
 	],
 	"injectors": {
