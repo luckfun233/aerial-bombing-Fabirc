@@ -32,8 +32,7 @@
   "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "玩家的角动量传递给炸弹的百分比。",
 
   "block.aerial-bombing.missile_table": "导弹合成台",
-  "item.aerial-bombing.missile_tnt": "导弹 TNT",
-
+  "item.aerial-bombing.missile_prefix": "导弹 ",
   "gui.aerial-bombing.instant_explosion_on": "瞬爆: §a开启",
   "gui.aerial-bombing.instant_explosion_off": "瞬爆: §c关闭"
 }

@@ -31,7 +31,7 @@
   "text.autoconfig.aerial-bombing.option.advancedPhysics.angularMomentumTransfer.@Tooltip": "Percentage of player's angular momentum transferred to the bomb.",
 
   "block.aerial-bombing.missile_table": "Missile Table",
-  "item.aerial-bombing.missile_tnt": "Missile TNT",
+  "item.aerial-bombing.missile_prefix": "Missile ",
 
   "gui.aerial-bombing.instant_explosion_on": "Instant: §aON",
   "gui.aerial-bombing.instant_explosion_off": "Instant: §cOFF"

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Interface to add an owner to any TntEntity.
+ * Interface to add a player owner to any TntEntity.
  * Implemented via Mixin.
  */
 public interface TntEntityOwner {
@@ -15,8 +15,9 @@ public interface TntEntityOwner {
 
     void setOwnerUuid(@Nullable UUID ownerUuid);
 
+    // Changed to getPlayerOwner to avoid conflicts with Entity.getOwner()
     @Nullable
-    PlayerEntity getOwner();
+    PlayerEntity getPlayerOwner();
 
     void setOwner(@Nullable PlayerEntity owner);
 }

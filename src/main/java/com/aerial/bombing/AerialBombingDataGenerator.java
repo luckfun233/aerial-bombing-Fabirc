@@ -17,30 +17,30 @@ public class AerialBombingDataGenerator implements DataGeneratorEntrypoint {
 	@Override
 	public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
 		FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
-
-		// 这个 `addProvider` 方法现在可以正确找到匹配的单参数构造函数
 		pack.addProvider(ModRecipeProvider::new);
 	}
 
 	private static class ModRecipeProvider extends FabricRecipeProvider {
-
-		// 构造函数现在只接收一个参数，解决了“应为1 个实参”的错误
 		public ModRecipeProvider(FabricDataOutput output) {
 			super(output);
 		}
 
-		// generate 方法现在使用了正确的签名，解决了“必须实现抽象方法”和“方法未从其超类重写”的错误
 		@Override
 		public void generate(Consumer<RecipeJsonProvider> exporter) {
+			// --- 修正配方 ---
+			// 配方已更改为我们之前讨论的更合理的版本
+			// 顶行: 铁锭, TNT, 铁锭
+			// 中行: 红石, 工作台, 红石
+			// 底行: 铁锭, 铁锭, 铁锭
 			ShapedRecipeJsonBuilder.create(RecipeCategory.REDSTONE, ModBlocks.MISSILE_TABLE)
 					.pattern("ITI")
-					.pattern("TCT")
-					.pattern("ITI")
+					.pattern("RCR") // <--- 修正
+					.pattern("III") // <--- 修正
 					.input('I', Items.IRON_INGOT)
 					.input('T', Items.TNT)
+					.input('R', Items.REDSTONE) // <-- 新增定义
 					.input('C', Items.CRAFTING_TABLE)
 					.criterion(hasItem(Items.CRAFTING_TABLE), conditionsFromItem(Items.CRAFTING_TABLE))
-					// offerTo 方法现在接收一个 Consumer，并使用 getRecipeName 生成 ID，解决了“无法解析方法”的错误
 					.offerTo(exporter, new Identifier(getRecipeName(ModBlocks.MISSILE_TABLE)));
 		}
 	}

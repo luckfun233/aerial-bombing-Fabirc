@@ -19,9 +19,6 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.BoundedDiscrete(min = 0, max = 5000)
     public int bombCooldownMs = 1000;
 
-    @ConfigEntry.Gui.Tooltip()
-    @ConfigEntry.BoundedDiscrete(min = 1, max = 10)
-    public int bombStrength = 4;
 
     // 新增选项：用于切换物理模拟引擎
     @ConfigEntry.Gui.Tooltip(count = 2)
