@@ -2,6 +2,7 @@ package com.aerial.bombing;
 
 import com.aerial.bombing.config.ModConfig;
 import com.aerial.bombing.entity.MissileData;
+import com.aerial.bombing.entity.MissileDataComponent;
 import com.aerial.bombing.entity.TntEntityOwner;
 import com.aerial.bombing.physics.AdvancedMomentumCalculator;
 import com.aerial.bombing.physics.BombMotionState;
@@ -30,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 public class AerialBombingManager {
@@ -94,19 +94,31 @@ public class AerialBombingManager {
             return false;
         }
 
-        // 检查物品是否为导弹
+        // --- 核心逻辑重构：先计算物理，再执行发射 ---
+
+        // 1. 根据配置选择物理引擎并计算初始运动状态
+        BombMotionState motionState;
+        if (config.useAdvancedPhysics) {
+            LOGGER.info("使用高级物理模拟引擎计算投掷/发射轨迹。");
+            motionState = AdvancedMomentumCalculator.calculateAdvancedMomentum(player, config.advancedPhysics);
+        } else {
+            LOGGER.info("使用标准物理模拟引擎计算投掷/发射轨迹。");
+            Vec3d position = MomentumCalculator.calculateDropPosition(player);
+            Vec3d velocity = MomentumCalculator.calculateRealisticMomentum(player);
+            motionState = new BombMotionState(position, velocity, Vec3d.ZERO);
+        }
+
         NbtCompound nbt = mainHandStack.getNbt();
         boolean isMissile = nbt != null && nbt.getBoolean("is_missile");
 
         if (isMissile) {
-            return executeMissileLaunch(player, world, mainHandStack, config, nbt);
+            return executeMissileLaunch(player, world, mainHandStack, nbt, motionState);
         } else {
-            return executeAdvancedBombing(player, world, mainHandStack, config);
+            return executeAdvancedBombing(player, world, mainHandStack, motionState);
         }
     }
 
-    private boolean executeAdvancedBombing(PlayerEntity player, World world, ItemStack tntStack, ModConfig config) {
-        // ... (原有的普通投弹逻辑，无需修改)
+    private boolean executeAdvancedBombing(PlayerEntity player, World world, ItemStack tntStack, BombMotionState motionState) {
         if (world.isClient) {
             return true;
         }
@@ -114,19 +126,10 @@ public class AerialBombingManager {
         Identifier itemIdentifier = Registries.ITEM.getId(tntStack.getItem());
         Identifier entityIdentifier = new Identifier(itemIdentifier.getNamespace(), itemIdentifier.getPath());
 
-        Optional<EntityType<?>> entityTypeOptional = EntityType.get(entityIdentifier.toString());
-
-        if (entityTypeOptional.isEmpty()) {
-            LOGGER.warn("未能为物品 {} 找到对应的实体类型 {}，将使用原版TNT作为备用。", itemIdentifier, entityIdentifier);
-            entityTypeOptional = Optional.of(EntityType.TNT);
-        }
-
-        EntityType<?> entityType = entityTypeOptional.get();
-        Entity spawnedEntity = entityType.create(world);
-
+        Entity spawnedEntity = EntityType.get(entityIdentifier.toString()).map(type -> type.create(world)).orElse(null);
         if (spawnedEntity == null) {
-            LOGGER.error("无法创建实体 {}！", entityIdentifier);
-            return false;
+            spawnedEntity = EntityType.TNT.create(world); // 备用方案
+            LOGGER.warn("未能为物品 {} 找到对应的实体类型 {}，将使用原版TNT作为备用。", itemIdentifier, entityIdentifier);
         }
 
         if (!player.isCreative()) {
@@ -135,22 +138,16 @@ public class AerialBombingManager {
 
         lastBombTime.put(player.getUuid(), System.currentTimeMillis());
 
-        BombMotionState motionState;
-        if (config.useAdvancedPhysics) {
-            motionState = AdvancedMomentumCalculator.calculateAdvancedMomentum(player, config.advancedPhysics);
-        } else {
-            Vec3d position = MomentumCalculator.calculateDropPosition(player);
-            Vec3d velocity = MomentumCalculator.calculateRealisticMomentum(player);
-            motionState = new BombMotionState(position, velocity, Vec3d.ZERO);
-        }
-
+        // 应用物理模拟计算出的位置和速度
         spawnedEntity.setPosition(motionState.position);
         spawnedEntity.setVelocity(motionState.velocity);
 
         if (spawnedEntity instanceof TntEntity tnt) {
             tnt.setFuse(80);
-            ((TntEntityOwner) tnt).setOwner(player);
-        } else if (spawnedEntity instanceof TntEntityOwner ownerTnt) {
+        }
+
+        // 尝试设置所有者
+        if (spawnedEntity instanceof TntEntityOwner ownerTnt) {
             ownerTnt.setOwner(player);
         }
 
@@ -161,19 +158,18 @@ public class AerialBombingManager {
         return true;
     }
 
-    private boolean executeMissileLaunch(PlayerEntity player, World world, ItemStack tntStack, ModConfig config, NbtCompound missileNbt) {
+    private boolean executeMissileLaunch(PlayerEntity player, World world, ItemStack tntStack, NbtCompound missileNbt, BombMotionState motionState) {
         if (world.isClient) {
             return true;
         }
 
         Identifier itemIdentifier = Registries.ITEM.getId(tntStack.getItem());
         Identifier entityIdentifier = new Identifier(itemIdentifier.getNamespace(), itemIdentifier.getPath());
-        EntityType<?> entityType = EntityType.get(entityIdentifier.toString()).orElse(EntityType.TNT);
-        Entity spawnedEntity = entityType.create(world);
+        Entity spawnedEntity = EntityType.get(entityIdentifier.toString()).map(type -> type.create(world)).orElse(null);
 
-        if (!(spawnedEntity instanceof TntEntity)) {
-            LOGGER.warn("物品 {} 对应的实体不是 TntEntity，无法作为导弹发射。将作为普通炸弹投掷。", itemIdentifier);
-            return executeAdvancedBombing(player, world, tntStack, config);
+        if (spawnedEntity == null) {
+            LOGGER.error("发射失败: 无法为导弹创建实体 {}！", entityIdentifier);
+            return false;
         }
 
         if (!player.isCreative()) {
@@ -182,34 +178,39 @@ public class AerialBombingManager {
 
         lastBombTime.put(player.getUuid(), System.currentTimeMillis());
 
-        // 设置导弹初始位置和速度 (发射时，应该从玩家正前方发射)
-        Vec3d eyePos = player.getEyePos();
-        Vec3d lookVec = player.getRotationVec(1f);
-        spawnedEntity.setPosition(eyePos.add(lookVec.multiply(1.5)));
-        // 初始速度是玩家速度+一个发射初速度
-        spawnedEntity.setVelocity(player.getVelocity().add(lookVec.multiply(0.5)));
+        // 应用物理模拟计算出的位置和速度
+        spawnedEntity.setPosition(motionState.position);
 
-        // --- 关键步骤: 将导弹数据从 ItemStack 传递给 TntEntity ---
-        if (spawnedEntity instanceof MissileData missile) {
+        if (spawnedEntity.getClass() == TntEntity.class) {
+            LOGGER.info("[路径 A' - Mixin] 检测到纯原版 TntEntity。将使用 TntEntityMixin 进行物理控制。");
+            spawnedEntity.setVelocity(motionState.velocity);
+
+            MissileData missile = (MissileData) spawnedEntity;
             missile.setMissile(true);
-            // 将秒转换为 tick (1秒=20ticks)
             missile.setFlightDurationTicks(missileNbt.getInt("flight_duration_sec") * 20);
             missile.setInstantExplosion(missileNbt.getBoolean("instant_explosion"));
-        }
 
-        // 设置所有者
-        if (spawnedEntity instanceof TntEntityOwner ownerTnt) {
-            ownerTnt.setOwner(player);
+            ((TntEntityOwner) spawnedEntity).setOwner(player);
+
+        } else {
+            LOGGER.info("[路径 B - 通用] 检测到自定义实体 {}。将强制使用附件系统和 GenericMissileManager。", entityIdentifier);
+
+            MissileDataComponent data = spawnedEntity.getAttachedOrCreate(ModAttachments.MISSILE_DATA);
+            data.flightDurationTicks = missileNbt.getInt("flight_duration_sec") * 20;
+            data.isInstantExplosion = missileNbt.getBoolean("instant_explosion");
+            data.propulsionFinished = false;
+            data.initialVelocity = motionState.velocity;
+            data.physicsApplied = false;
+
+            GenericMissileManager.getInstance().registerMissile(spawnedEntity);
         }
 
         world.spawnEntity(spawnedEntity);
-        // 发射时使用不同的声音
         world.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.PLAYERS, 1.5F, 1.0F);
-        LOGGER.info("玩家 {} 发射了一枚 {} 导弹。", player.getName().getString(), entityIdentifier);
+        LOGGER.info("玩家 {} 成功发射了一枚 {} 导弹。", player.getName().getString(), entityIdentifier);
 
         return true;
     }
-
 
     public boolean canPlayerBomb(PlayerEntity player) {
         ModConfig config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();

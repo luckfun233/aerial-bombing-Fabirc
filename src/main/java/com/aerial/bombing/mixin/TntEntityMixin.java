@@ -46,58 +46,74 @@ public abstract class TntEntityMixin extends Entity implements TntEntityOwner, M
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void onTick(CallbackInfo ci) {
+        // --- 逻辑前置检查 ---
+        // 如果不是导弹，或者导弹推进已结束，则立刻返回，让原版的 tick 方法继续执行
         if (!this.isMissile || this.propulsionFinished) {
-            return;
-        }
-
-        this.flightDurationTicks--;
-        setNoGravity(true);
-
-        if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld serverWorld) {
-            Vec3d trailOffset = this.getVelocity().normalize().multiply(-0.3);
-            serverWorld.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                    this.getX(), this.getY() + 0.25, this.getZ(),
-                    5,
-                    trailOffset.x, trailOffset.y, trailOffset.z,
-                    0.15);
-        }
-
-        // --- 终极平滑飞行逻辑 V2 (基于恒定速度向量) ---
-        // 这种方法不依赖于上一刻的速度进行累加，而是每一刻都重新设定标准速度。
-        // 这使得客户端和服务器之间的位置同步更加稳定，能有效消除瞬移感。
-        Vec3d direction = this.getVelocity().normalize();
-        // 如果向量无效 (例如速度为0)，则使用实体的朝向
-        if (direction.lengthSquared() < 0.1) {
-            direction = this.getRotationVec(1.0f);
-        }
-        this.setVelocity(direction.multiply(MISSILE_SPEED_PER_TICK));
-
-        this.move(MovementType.SELF, this.getVelocity());
-        // 确保实体朝向与飞行方向一致
-        this.setRotation(this.getYaw(), this.getPitch());
-
-        boolean collided = this.horizontalCollision || this.verticalCollision;
-        boolean timeUp = this.flightDurationTicks <= 0;
-
-        if (collided || timeUp) {
-            this.propulsionFinished = true;
-            setNoGravity(false);
-
-            if (collided) {
-                LOGGER.info("导弹碰撞，触发引爆！剩余飞行时间: {} ticks", this.flightDurationTicks);
-                this.setFuse(1);
-            } else { // timeUp
-                if (this.isInstantExplosion) {
-                    LOGGER.info("导弹飞行时间结束，瞬爆模式触发引爆！");
-                    this.setFuse(1);
-                } else {
-                    LOGGER.info("导弹飞行时间结束，转入常规下落模式。");
-                    this.setFuse(20);
+            // 确保在推进结束后恢复重力
+            if (this.isMissile && this.propulsionFinished) {
+                if (this.hasNoGravity()) {
+                    setNoGravity(false);
                 }
             }
             return;
         }
 
+        // --- 从这里开始，我们完全接管了这个 tick ---
+        // 1. 更新飞行时间并禁用重力
+        this.flightDurationTicks--;
+        if (!this.hasNoGravity()) {
+            setNoGravity(true);
+        }
+
+        // 2. 刷新实体的 bounding box 和基础状态
+        super.tick();
+
+        // 3. 粒子效果 (确保在服务器端执行)
+        if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld serverWorld) {
+            Vec3d trailOffset = this.getVelocity().normalize().multiply(-0.5);
+            serverWorld.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                    this.getX(), this.getY() + 0.25, this.getZ(),
+                    5,
+                    trailOffset.x, trailOffset.y, trailOffset.z,
+                    0.05); // 减小粒子扩散，使其更像尾焰
+        }
+
+        // 4. 强制设定速度向量，以维持恒定高速
+        Vec3d direction = this.getVelocity().normalize();
+        // 如果速度过低（例如，刚发射时），则使用其朝向作为初始方向
+        if (direction.lengthSquared() < 0.1) {
+            direction = this.getRotationVec(1.0f);
+        }
+        this.setVelocity(direction.multiply(MISSILE_SPEED_PER_TICK));
+
+        // 5. 执行移动
+        this.move(MovementType.SELF, this.getVelocity());
+        this.velocityModified = true; // 标记速度已被我们修改，防止游戏内部逻辑再次修改
+
+        // 6. 检查结束条件
+        boolean collided = this.horizontalCollision || this.verticalCollision;
+        boolean timeUp = this.flightDurationTicks <= 0;
+
+        if (collided || timeUp) {
+            this.propulsionFinished = true;
+            this.setNoGravity(false); // 恢复重力
+
+            if (collided) {
+                LOGGER.info("导弹 (TntEntity) 碰撞，触发引爆！");
+                this.detonate(); // 使用我们自己的引爆接口
+            } else { // timeUp
+                if (this.isInstantExplosion) {
+                    LOGGER.info("导弹 (TntEntity) 飞行时间结束，瞬爆模式触发引爆！");
+                    this.detonate();
+                } else {
+                    LOGGER.info("导弹 (TntEntity) 飞行时间结束，转入常规下落模式。");
+                    this.setFuse(20); // 转为普通TNT下落引信
+                }
+            }
+            // 推进结束，但本 tick 依然由我们控制，因此仍然取消后续逻辑
+        }
+
+        // 7. 取消原版 tick() 方法的其余部分，防止它应用重力或阻力
         ci.cancel();
     }
 

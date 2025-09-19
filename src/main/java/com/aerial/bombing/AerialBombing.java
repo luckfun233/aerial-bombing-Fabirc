@@ -29,8 +29,13 @@ public class AerialBombing implements ModInitializer {
 		// 初始化配置
 		AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 
+		// 初始化附件
+		ModAttachments.registerAttachments();
+
 		// 初始化投弹管理器
 		AerialBombingManager.getInstance().initialize();
+		// 初始化通用导弹管理器
+		GenericMissileManager.getInstance().initialize();
 
 		// 注册方块和物品
 		ModBlocks.registerModBlocks();

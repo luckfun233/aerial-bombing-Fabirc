@@ -27,6 +27,8 @@ public class MissileTableBlockEntity extends BlockEntity implements ExtendedScre
     public final PropertyDelegate propertyDelegate;
     private boolean instantExplosion = false;
 
+    // ... 其他方法保持不变 ...
+
     public MissileTableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MISSILE_TABLE_ENTITY, pos, state);
         this.propertyDelegate = new PropertyDelegate() {
@@ -47,9 +49,7 @@ public class MissileTableBlockEntity extends BlockEntity implements ExtendedScre
         };
     }
 
-    // --- createOrUpgradeMissile 方法 (已加入动态命名) ---
     private ItemStack createOrUpgradeMissile(ItemStack base, ItemStack rocket, boolean instant) {
-        // 检查基础物品是否已经是导弹
         NbtCompound baseNbt = base.getNbt();
         boolean isUpgrading = baseNbt != null && baseNbt.getBoolean("is_missile");
 
@@ -57,11 +57,9 @@ public class MissileTableBlockEntity extends BlockEntity implements ExtendedScre
         int initialFlightDuration = 0;
 
         if (isUpgrading) {
-            // 如果是升级，则复制基础导弹
             newMissile = base.copy();
             initialFlightDuration = baseNbt.getInt("flight_duration_sec");
         } else {
-            // 如果是新建，则创建一个纯净的TNT
             newMissile = new ItemStack(base.getItem(), 1);
         }
         newMissile.setCount(1);
@@ -69,22 +67,20 @@ public class MissileTableBlockEntity extends BlockEntity implements ExtendedScre
         NbtCompound nbt = newMissile.getOrCreateNbt();
         int newRocketDuration = getFlightDuration(rocket);
 
-        // --- 核心升级逻辑 (保持不变) ---
         nbt.putBoolean("is_missile", true);
-        // 累加飞行时间
         nbt.putInt("flight_duration_sec", initialFlightDuration + newRocketDuration);
         nbt.putBoolean("instant_explosion", instant);
 
-        // --- 动态命名修复 ---
-        // 我们不再使用固定的翻译键，而是动态构建名称
-        Text missilePrefix = Text.translatable("item.aerial-bombing.missile_prefix"); // "导弹 "
-        Text finalName = missilePrefix.copy().append(base.getName()); // "导弹 " + "幸运TNT"
+        // --- [修复] 动态命名逻辑 ---
+        // 始终基于物品的基础翻译键来构建名称，避免重复叠加
+        Text missilePrefix = Text.translatable("item.aerial-bombing.missile_prefix");
+        // 使用 base.getItem().getName() 而不是 base.getName() 来获取原始物品名
+        Text finalName = missilePrefix.copy().append(base.getItem().getName());
         newMissile.setCustomName(finalName);
 
         return newMissile;
     }
 
-    // --- 其他所有方法保持不变，以确保功能稳定 ---
     private void craftMissile() {
         ItemStack inputStack = this.getStack(0);
         ItemStack rocketSlot = this.getStack(1);
